@@ -21,24 +21,6 @@ An APK installed on your phone cannot by itself create a public internet link. D
 - A free Supabase project
 - Android Studio + Android SDK for APK builds
 
-## 2. Set up Supabase
-1. Create a project at https://supabase.com/dashboard.
-2. Open **SQL Editor** in your Supabase project.
-3. Open `supabase/schema.sql` from this project, copy all its contents, paste into a new SQL query and click **Run**.
-4. Open **Project Settings > API** (or API Keys).
-5. Copy the Project URL and the publishable/anon key. Never use the `service_role` or secret key in frontend code.
-
-## 3. Configure this app
-In the project folder, make a copy of `.env.example` and name it `.env`.
-Fill in:
-
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_OR_PUBLISHABLE_KEY
-```
-
-Save the file. Do not commit `.env` to a public GitHub repository.
-
 ## 4. Run locally
 Open a terminal in this folder:
 

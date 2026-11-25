@@ -1,21 +1,57 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
   <meta name="theme-color" content="#f7f4ff" />
-  <title>WishLink — Your little wishlist</title>
+  <meta
+    name="description"
+    content="WishLink — Create your wishlist, track purchases, manage your budget and share gifts."
+  />
+
+  <title>WishLink — Your Wishlist</title>
 </head>
+
 <body>
   <div id="app">
+
     <header class="topbar">
-      <a class="brand" href="/">Wish<span>Link</span> <b>♡</b></a>
-      <button id="themeBtn" class="icon-btn" aria-label="Toggle theme">☾</button>
+      <a class="brand" href="/" aria-label="WishLink home">
+        Wish<span>Link</span>
+      </a>
+
+      <button
+        id="themeBtn"
+        class="icon-btn"
+        type="button"
+        aria-label="Toggle dark mode"
+        title="Toggle theme"
+      >
+        ☾
+      </button>
     </header>
-    <main id="screen"><div class="loading">Opening your WishLink…</div></main>
-    <footer>Made for the little things you wish for ♡</footer>
-    <div id="toast" class="toast" role="status"></div>
+
+    <main id="screen">
+      <div class="loading">Opening your WishLink...</div>
+    </main>
+
+    <footer>
+      WishLink — Keep track of the things you wish for.
+    </footer>
+
+    <div
+      id="toast"
+      class="toast"
+      role="status"
+      aria-live="polite"
+    ></div>
+
   </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
