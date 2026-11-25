@@ -56,6 +56,46 @@ async function renderRoute() {
   renderDashboard();
 }
 
+async function ensureProfile(username) {
+  const { data: existing, error: readError } = await supabase
+    .from('profiles')
+    .select('id, username')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  if (readError) throw readError;
+
+  // Reuse the existing profile instead of inserting it again.
+  if (existing) {
+    return existing;
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert({
+      id: currentUser.id,
+      username
+    })
+    .select('id, username')
+    .single();
+
+  if (error) {
+    // Check whether another request created the profile meanwhile.
+    const { data: retry, error: retryError } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (retryError) throw retryError;
+    if (retry) return retry;
+
+    throw error;
+  }
+
+  return data;
+}
+
 function renderAuth() {
   screen.innerHTML=`<section class="panel narrow auth"><p class="eyebrow">YOUR LITTLE SHOPPING SPACE</p><h1>Welcome to <span>WishLink</span> ♡</h1>
   <p class="muted">Create your wishlist and share it with people you love.</p>
@@ -84,17 +124,23 @@ function renderAuth() {
         if(!/^[a-z0-9_]{3,24}$/.test(username)) throw new Error('Username must be 3–24 letters, numbers or underscores.');
         const {data,error}=await supabase.auth.signUp({email,password});
         if(error) throw error;
-        if(data.user && data.session){
-          const {error:profileError}=await supabase.from('profiles').insert({id:data.user.id,username});
-          if(profileError) throw profileError;
-          toast('Your WishLink account is ready!'); await renderRoute();
+        if (data.user && data.session) {
+  currentUser = data.user;
+
+  await ensureProfile(username);
+
+  toast('Your WishLink account is ready!');
+  await renderRoute();
         } else {
           toast('Check your email to confirm, then log in. Create your username after confirmation.');
           setMode('login');
         }
       }
     } catch(err){toast(err.message||'Something went wrong.');}
-    finally{$('authSubmit').disabled=false;}
+    finally {
+  const button = $('authSubmit');
+  if (button) button.disabled = false;
+}
   };
 }
 
@@ -112,7 +158,19 @@ async function loadOwner() {
 function renderDashboard() {
   if(!profile){
     screen.innerHTML=`<section class="panel narrow"><p class="eyebrow">ONE LAST STEP</p><h2>Choose your WishLink username</h2><p class="muted">Your account is ready. Pick a public username for your shareable link.</p><form id="profileForm"><label>Username</label><input id="newUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" placeholder="e.g. akshita"><button class="primary full">Create my WishLink</button></form><button class="text-btn" id="logoutBtn">Log out</button></section>`;
-    $('profileForm').onsubmit=async(e)=>{e.preventDefault();const username=$('newUsername').value.trim().toLowerCase();try{const {error}=await supabase.from('profiles').insert({id:currentUser.id,username});if(error)throw error;await loadOwner();renderDashboard();}catch(err){toast(err.message||'Could not create username.');}};
+    $('profileForm').onsubmit = async (e) => {
+  e.preventDefault();
+
+  const username = $('newUsername').value.trim().toLowerCase();
+
+  try {
+    await ensureProfile(username);
+    await loadOwner();
+    renderDashboard();
+  } catch (err) {
+    toast(err.message || 'Could not create username.');
+  }
+};
     $('logoutBtn').onclick=()=>supabase.auth.signOut().then(renderRoute); return;
   }
   const pending=ownerItems.filter(x=>!x.delivered).length,done=ownerItems.length-pending;
