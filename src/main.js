@@ -1,11 +1,14 @@
 import './style.css';
 import { supabase, isConfigured } from './supabase.js';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const SharedProduct = registerPlugin('SharedProduct');
 
 const $ = (id) => document.getElementById(id);
 const screen = $('screen');
 
 const APP_URL = (import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin).replace(/\/$/, '');
-const ANDROID_APK_URL = ''; // Add your APK URL here when ready.
+const ANDROID_APK_URL = ''; 
 const IMAGE_BUCKET = 'wish-images';
 
 let currentUser = null;
@@ -93,6 +96,46 @@ function renderSetup() {
     </section>`;
 }
 
+
+async function handlePendingShare() {
+  if (!Capacitor.isNativePlatform() || !currentUser) return;
+
+  try {
+    const result = await SharedProduct.getPendingShare();
+    const sharedText = result?.text?.trim();
+
+    if (!sharedText) return;
+
+    const urlMatch = sharedText.match(/https?:\/\/[^\s]+/i);
+    const sharedUrl = validUrl(urlMatch?.[0] || sharedText);
+
+    if (!sharedUrl) {
+      toast('Could not find a product link in the shared text.');
+      return;
+    }
+
+    const sharedTitle = sharedText
+      .replace(urlMatch?.[0] || '', '')
+      .trim();
+
+    activePage = 'wishlist';
+    editingId = null;
+    renderApp();
+
+    $('wishLink').value = sharedUrl;
+
+    if (sharedTitle && sharedTitle.length <= 90) {
+      $('wishName').value = sharedTitle;
+    }
+
+    toast('Shared product link added. Check the details before saving.');
+  } catch (error) {
+    console.error('Share handling error:', error);
+    toast('Could not read the shared product link.');
+  }
+}
+
+
 async function renderRoute() {
   if (!isConfigured) return renderSetup();
 
@@ -110,6 +153,7 @@ async function renderRoute() {
     await loadOwner();
     if (!profile) return renderProfileSetup();
     renderApp();
+    await handlePendingShare();
   } catch (err) {
     screen.innerHTML = `<section class="panel"><h2>Could not load WishLink</h2><p class="muted">${esc(err.message)}</p><button class="primary" id="retryLoad">Try again</button></section>`;
     $('retryLoad')?.addEventListener('click', renderRoute);
